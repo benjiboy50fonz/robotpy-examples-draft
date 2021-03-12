@@ -1,4 +1,7 @@
-import hal.simulation
+import wpilib.simulation
+
+from wpimath.system import LinearSystemId
+from wpimath.system.plant import DCMotor
 
 from pyfrc.physics.core import PhysicsInterface
 from pyfrc.physics import motor_cfgs, tankmodel
@@ -13,11 +16,11 @@ class PhysicsEngine:
         """
 
         # Motors
-        self.l_motor = hal.simulation.PWMSim(1)
-        self.r_motor = hal.simulation.PWMSim(2)
+        self.l_motor = wpilib.simulation.PWMSim(1)
+        self.r_motor = wpilib.simulation.PWMSim(2)
 
         # NavX (SPI interface)
-        self.navx = hal.simulation.SimDeviceSim("navX-Sensor[4]")
+        self.navx = wpilib.simulation.SimDeviceSim("navX-Sensor[4]")
         self.navx_yaw = self.navx.getDouble("Yaw")
 
         self.physics_controller = physics_controller
@@ -26,15 +29,12 @@ class PhysicsEngine:
         bumper_width = 3.25 * units.inch
 
         # fmt: off
-        self.drivetrain = tankmodel.TankModel.theory(
-            motor_cfgs.MOTOR_CFG_CIM,           # motor configuration
-            110 * units.lbs,                    # robot mass
-            10.71,                              # drivetrain gear ratio
-            2,                                  # motors per side
-            22 * units.inch,                    # robot wheelbase
-            23 * units.inch + bumper_width * 2, # robot width
-            32 * units.inch + bumper_width * 2, # robot length
-            6 * units.inch,                     # wheel diameter
+        self.drivetrain = wpilib.simulation.DifferentialDrivetrainSim(
+            plant=LinearSystemId.identifyDrivetrainSystem(1.98, 0.2, 1.5, 0.3),
+            trackWidth=0.8,
+            driveMotor=DCMotor.NEO(2), # 2 NEO drivetrain.
+            gearingRatio=10.71, # Common ToughBox Mini gear ratio.
+            wheelRadius=0.0762, # 6" wheel's radius in meters.
         )
         # fmt: on
 
@@ -52,10 +52,14 @@ class PhysicsEngine:
         l_motor = self.l_motor.getSpeed()
         r_motor = self.r_motor.getSpeed()
 
-        transform = self.drivetrain.calculate(l_motor, r_motor, tm_diff)
-        pose = self.physics_controller.move_robot(transform)
+        # Use a simple percentage drive.
+        self.drivetrain.setInputs(l_motor, -r_motor)
+        self.drivetrain.update(tm_diff)
 
         # Update the gyro simulation
         # -> FRC gyros like NavX are positive clockwise, but
         #    the returned pose is positive counter-clockwise
-        self.navx_yaw.set(-pose.rotation().degrees())
+        self.navx_yaw.set(-self.drivetrain.getPose().rotation().degrees())
+
+        # Update the robot's position on Field2D
+        self.physics_controller.field.setRobotPose(self.drivetrain.getPose())

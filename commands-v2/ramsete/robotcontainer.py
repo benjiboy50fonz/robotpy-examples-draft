@@ -19,6 +19,7 @@ from subsystems.drivetrain import Drivetrain
 
 import constants
 
+import math
 
 class RobotContainer:
 
@@ -90,7 +91,7 @@ class RobotContainer:
         movements = [Translation2d(1, 1), Translation2d(2, -1)]
 
         # End at this position, three meters straight ahead of us, facing forward.
-        finalPosition = Pose2d(3, 0, Rotation2d(0))
+        finalPosition = Pose2d(3, 0, Rotation2d(math.pi))
 
         # An example trajectory to follow. All of these units are in meters.
         self.exampleTrajectory = TrajectoryGenerator.generateTrajectory(

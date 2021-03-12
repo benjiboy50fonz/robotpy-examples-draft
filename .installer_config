@@ -1,0 +1,3 @@
+[auth]
+hostname = py -3 -m robotpy_installer install robotpy
+

@@ -23,6 +23,13 @@ class DriveTrain(Subsystem):
         self.frontRightCIM = wpilib.Victor(2)
         self.backLeftCIM = wpilib.Victor(3)
         self.backRightCIM = wpilib.Victor(4)
+
+        liveWindow = wpilib.LiveWindow.getInstance()
+
+        liveWindow.setEnabled(True)
+
+        liveWindow.enableTelemetry(self.frontLeftCIM)
+
         # wpilib.LiveWindow.addActuator("DriveTrain", "Front Left CIM", self.frontLeftCIM)
         # wpilib.LiveWindow.addActuator(
         # "DriveTrain", "Front Right CIM", self.frontRightCIM
